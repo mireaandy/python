@@ -27,8 +27,8 @@ class userProfiles:
 
     @usersDatabase.setter
     def usersDatabase(self, value):
-        self.update_active_user()
         self._usersDatabase = value
+        self.update_active_user()
 
     @usersDatabase.getter
     def get_users_database(self):

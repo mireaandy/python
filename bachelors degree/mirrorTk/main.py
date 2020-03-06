@@ -1,9 +1,9 @@
+import datetime as dt
 from io import StringIO
 from tkinter import *
-from news import *
-import datetime as dt
-from mirrorTk.news import *
-from mirrorTk.UserProfiles import *
+
+from mirrorTk.news import News
+from mirrorTk.userProfiles import userProfiles
 
 time_format = 12 # 12 or 24
 date_format = "%b %d, %Y"
@@ -48,8 +48,8 @@ class Newsletter(Frame):
         Frame.__init__(self, parent, *args, **kwargs)
 
         self.configure(bg="black")
-        self.newsHandler = News(parent.userHandler.activeUser['newsTopic'])
-        self.newsLabel = Label(self, text="News :: Source " + self.newsHandler.keywords, font=("Helvetica", 20), fg="white", bg="black", justify="left")
+        self.newsHandler = News(parent.currentActiveUser['newsTopic'])
+        self.newsLabel = Label(self, text="News" , font=("Helvetica", 20), fg="white", bg="black", justify="left")
         self.newsContainer = Frame(self, bg="black")
         self.newsContentLabel = Label(self.newsContainer, font=("Helvetica", 10), fg="white", bg="black", justify="left")
 
@@ -68,7 +68,7 @@ class Newsletter(Frame):
             newsString.write(('\n' + newsTitle))
 
         self.newsContentLabel.config(text=newsString.getvalue())
-        print(self.newsContentLabel.cget('text'))
+        #print(self.newsContentLabel.cget('text'))
         newsString.close()
 
 
@@ -81,8 +81,8 @@ class Window(Tk):
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
 
-        self.userHandler = UserProfiles()
-        self.currentActiveUser = self.userHandler.activeUser
+        self.userHandler = userProfiles()
+        self.currentActiveUser = self.userHandler.get_active_user()
         self.newsFrame = Newsletter(self)
         self.clockFrame = Clock(self)
 
@@ -92,8 +92,8 @@ class Window(Tk):
 
     def update_tk(self):
         self.clockFrame.tick()
-        self.userHandler.refresh_users_database()
-        self.currentActiveUser = self.userHandler.activeUser
+
+        self.currentActiveUser = self.userHandler.get_active_user()
 
         if self.currentActiveUser != self.userHandler.activeUser:
             self.currentActiveUser = self.userHandler.activeUser
