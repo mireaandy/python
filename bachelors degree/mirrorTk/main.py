@@ -49,12 +49,14 @@ class Newsletter(Frame):
 
         self.configure(bg="black")
         self.newsHandler = News(parent.currentActiveUser['newsTopic'])
-        self.newsLabel = Label(self, text="News" , font=("Helvetica", 20), fg="white", bg="black", justify="left")
+        self.labelContainer = Frame(self, bg="black")
+        self.label = Label(self.labelContainer, text="News", font=("Helvetica", 20), fg="white", bg="black", justify="left")
         self.newsContainer = Frame(self, bg="black")
         self.newsContentLabel = Label(self.newsContainer, font=("Helvetica", 10), fg="white", bg="black", justify="left")
 
-        self.newsContentLabel.pack(side="bottom", anchor="n")
-        self.newsLabel.grid(row=0, column=0)
+        self.label.pack(side="bottom", anchor="n")
+        self.newsContentLabel.pack()
+        self.labelContainer.grid(row=0, column=0)
         self.newsContainer.grid(row=1, column=0)
 
     def refresh_news(self):
@@ -62,13 +64,10 @@ class Newsletter(Frame):
 
         self.newsContentLabel.config(text=newsString.getvalue())
 
-        print(self.newsContentLabel.cget('text'))
-
         for newsTitle in self.newsHandler.get_news():
             newsString.write(('\n' + newsTitle))
 
         self.newsContentLabel.config(text=newsString.getvalue())
-        #print(self.newsContentLabel.cget('text'))
         newsString.close()
 
 
@@ -95,11 +94,7 @@ class Window(Tk):
 
         self.currentActiveUser = self.userHandler.get_active_user()
 
-        if self.currentActiveUser != self.userHandler.activeUser:
-            self.currentActiveUser = self.userHandler.activeUser
-
-            self.newsFrame.newsHandler = News(self.currentActiveUser['newsTopic'])
-
+        self.newsFrame.newsHandler.replace_keyword(self.currentActiveUser['newsTopic'])
         self.newsFrame.refresh_news()
         self.after(1000, self.update_tk)
 

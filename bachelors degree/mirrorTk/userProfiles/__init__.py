@@ -14,12 +14,19 @@ class userProfiles:
         return self.activeUser
 
     def update_active_user(self):
+        found = False
+
         if len(self.usersDatabase) < 1:
             pass
+
         for index in range(len(self.usersDatabase)):
             if self.usersDatabase[index].get('isActive') == '1':
+                found = True
                 self.activeUser = self.usersDatabase[index]
                 break
+
+        if not found:
+            self.activeUser = self.usersDatabase[1]
 
     def populate_users_database(self):
         cursor = self.connectionDatabase.cursor()
@@ -31,8 +38,8 @@ class userProfiles:
         for row in data:
             self.usersDatabase.append({'userName': row[1], 'newsTopic': row[2], 'isActive': row[3]})
 
-        self.update_active_user()
         cursor.close()
+        self.update_active_user()
 
     def refresh_users_database(self):
         self.usersDatabase = [{}]

@@ -40,31 +40,28 @@ websites = {
 
 
 class News:
-    keywords = []
 
     def __init__(self, keyword):
-        self.keywords.append(keyword)
+        self.keyword = keyword
 
-    def add_keyword(self, keyword):
-        self.keywords.append(keyword)
+    def replace_keyword(self, keyword):
+        self.keyword = keyword
 
     def get_news(self):
         answer = []
 
-        for keyword in self.keywords:
-            try :
-                content = requests.get(websites[keyword]).content
-            except:
-                print("keyword does not exist")
-                continue
+        try:
+            content = requests.get(websites[self.keyword]).content
+        except:
+            return answer
 
-            soup = BeautifulSoup(content, "html5lib")
-            news = soup.findAll("article", class_ = "unit_news shadow p_r")
+        soup = BeautifulSoup(content, "html5lib")
+        news = soup.findAll("article", class_="unit_news shadow p_r")
 
-            for newsPiece in news:
-                titles = newsPiece.findAll("div", class_ = "title_news")
+        for newsPiece in news:
+            titles = newsPiece.findAll("div", class_="title_news")
 
-                for title in titles:
-                    answer.append(title.get_text())
+            for title in titles:
+                answer.append(title.get_text())
 
         return answer
