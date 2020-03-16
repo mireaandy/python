@@ -6,7 +6,7 @@ class userProfiles:
         self.activeUser = {}
         self.connectionDatabase = connect("../mirrorDatabase.db")
         self.usersDatabase = [{}]
-        self.getUsersCommand = 'SELECT {} FROM userData;'
+        self.populateCommand = 'SELECT {} FROM userData;'
         self.populate_users_database()
 
     def get_active_user(self):
@@ -31,12 +31,12 @@ class userProfiles:
     def populate_users_database(self):
         cursor = self.connectionDatabase.cursor()
 
-        cursor.execute(self.getUsersCommand.format('*'))
+        cursor.execute(self.populateCommand.format('*'))
 
         data = cursor.fetchall()
 
         for row in data:
-            self.usersDatabase.append({'userName': row[1], 'newsTopic': row[2], 'isActive': row[3]})
+            self.usersDatabase.append({'userName': row[1], 'newsTopic': row[3], 'isActive': row[4]})
 
         cursor.close()
         self.update_active_user()
