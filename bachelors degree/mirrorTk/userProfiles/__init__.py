@@ -36,7 +36,7 @@ class userProfiles:
         data = cursor.fetchall()
 
         for row in data:
-            self.usersDatabase.append({'userName': row[1], 'newsTopic': row[3], 'isActive': row[4]})
+            self.usersDatabase.append({'userName': row[1], 'newsTopic': row[3], 'isActive': row[4], 'googleToken': row[5]})
 
         cursor.close()
         self.update_active_user()

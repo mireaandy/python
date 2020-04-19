@@ -4,12 +4,10 @@
     </head>
 
     <body>
-        <div>Configuration:
-            <a href="{{ url_for('index') }}">Home</a >
-            {% if current_user.is_anonymous %}
-            <a href="{{ url_for('login') }}">Login</a>
-            {% else %}
-            <a href="{{ url_for('logout') }}">Logout</a>
+        <div class="container">
+                Welcome to your mirror configuration website
+            {% if not current_user.is_anonymous %}
+                <a href="{{ url_for('logout') }}"> Logout </a>
             {% endif %}
         </div>
         <hr>
