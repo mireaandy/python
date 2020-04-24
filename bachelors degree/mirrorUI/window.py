@@ -2,10 +2,11 @@ import datetime as dt
 from io import StringIO
 from tkinter import *
 import pickle
+from google_auth_oauthlib import *
 from googleapiclient.discovery import build
 
-from mirrorTk.news import News
-from mirrorTk.userProfiles import userProfiles
+from news import News
+from userHandler import Database, encode_pictures, recognize_face
 
 time_format = 12  # 12 or 24
 date_format = "%b %d, %Y"
@@ -54,9 +55,9 @@ class Calendar(Frame):
         self.calendarEventContainer = Frame(self, bg='black')
         self.calendarEventContainer.pack(side=TOP, anchor=E)
         self.parent = parent
-        self.get_events()
 
     def get_events(self):
+        """
         with open('../' + self.parent.currentActiveUser['googleToken'], 'rb') as token:
             credentials = pickle.load(token)
 
@@ -64,7 +65,6 @@ class Calendar(Frame):
 
         events_result = service.events().list(calendarId='primary', timeMin=dt.datetime.utcnow().isoformat() + 'Z', \
                                               maxResults=5, singleEvents=True, orderBy='startTime').execute()
-
         events = events_result.get('items', [])
 
         for widget in self.calendarEventContainer.winfo_children():
@@ -73,6 +73,7 @@ class Calendar(Frame):
         for event in events:
             calendar_event = CalendarEvent(self.calendarEventContainer, event_name=event['summary'])
             calendar_event.pack(side=TOP, anchor=E)
+        """
 
 
 class CalendarEvent(Frame):
@@ -88,7 +89,7 @@ class Newsletter(Frame):
         Frame.__init__(self, parent, *args, **kwargs)
 
         self.configure(bg="black")
-        self.newsHandler = News(parent.currentActiveUser['newsTopic'])
+        self.newsHandler = News(parent.currentActiveUser.newsTopic)
         self.labelContainer = Frame(self, bg="black")
         self.label = Label(self.labelContainer, text="News", font=("Helvetica", 20), fg="white", bg="black",
                            justify="left")
@@ -118,13 +119,12 @@ class Window(Tk):
         Tk.__init__(self)
         self.title("mirror")
         self.configure(background="black")
-        self.attributes("-fullscreen", True)
+        self.attributes("-fullscreen", False)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
-        self.calendar_refresh_rate = 1800
-
-        self.userHandler = userProfiles()
-        self.currentActiveUser = self.userHandler.get_active_user()
+        self.tenmin_refresh_rate = 0
+        self.database = Database()
+        self.currentActiveUser = self.database.get_active_user()
         self.newsFrame = Newsletter(self)
         self.clockFrame = Clock(self)
         self.calendarFrame = Calendar(self)
@@ -137,19 +137,24 @@ class Window(Tk):
     def update_tk(self):
         self.clockFrame.tick()
 
-        self.currentActiveUser = self.userHandler.get_active_user()
+        self.currentActiveUser = self.database.get_active_user()
 
-        self.calendar_refresh_rate -= 1
-        if self.calendar_refresh_rate == 0:
+        encode_pictures()
+
+        recognize_face()
+
+        if self.tenmin_refresh_rate == 1800:
             self.calendarFrame.get_events()
-            self.calendar_refresh_rate = 1800
+            encode_pictures()
+            self.tenmin_refresh_rate = 0
 
-        self.newsFrame.newsHandler.replace_keyword(self.currentActiveUser['newsTopic'])
+        self.tenmin_refresh_rate -= 1
+
+        self.newsFrame.newsHandler.replace_keyword(self.currentActiveUser.newsTopic)
         self.newsFrame.refresh_news()
         self.after(1000, self.update_tk)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     window = Window()
-
     window.mainloop()

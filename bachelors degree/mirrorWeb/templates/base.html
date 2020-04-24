@@ -1,0 +1,49 @@
+{% extends 'bootstrap/base.html' %}
+
+{% block title %}
+    Mirror configuration
+{% endblock %}
+
+{% block navbar %}
+    <nav class="navbar bg-light">
+        <span class="navbar-brand text-dark" style="font-size:2.7vh">
+            {% if current_user.is_anonymous %}
+                Welcome to your mirror configuration website
+            {% else %}
+                {{ current_user.username.capitalize() }}'s mirror settings
+            {% endif %}
+        </span>
+        <ul class="navbar-nav">
+            <div class="btn-group btn-light">
+                {% if not main%}
+                    {% if current_user.is_anonymous %}
+                        <button type="button" class="btn btn-secondary">
+                            <a class="nav-link text-light" href="{{ url_for('index') }}"> Login </a>
+                        </button>
+                    {% endif %}
+                {% endif %}
+                {% if not logout %}
+                    {% if not current_user.is_anonymous %}
+                        <button type="button" class="btn btn-secondary">
+                            <a class="nav-link text-light" href="{{ url_for('logout') }}"> Logout </a>
+                        </button>
+                    {% endif %}
+                {% endif %}
+                {% if not signup %}
+                    {% if current_user.is_anonymous %}
+                        <button type="button" class="btn btn-secondary">
+                            <a class="nav-link text-light" href="{{ url_for('signup') }}"> Register </a>
+                        </button>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </ul>
+    </nav>
+{% endblock %}
+
+{% block content %}
+    <br style="height: 225px">
+        {%  block app_content %}
+        {% endblock %}
+    <br style="height: 225px">
+{% endblock %}
