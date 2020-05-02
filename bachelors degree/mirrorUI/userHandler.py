@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from string import digits
 import os
-import cv2
+from cv2 import imread, cvtColor, COLOR_BGR2RGB, CascadeClassifier, VideoCapture, COLOR_BGR2GRAY, CASCADE_SCALE_IMAGE
 import face_recognition
 import pickle
 import time
@@ -19,8 +19,15 @@ class Database:
     Model.metadata.create_all(databaseEngine)
     session = sessionmaker(bind=databaseEngine)()
 
+    @staticmethod
     def get_active_user(self):
-        return self.session.query(User).filter_by(isActive='1').first()
+        return Database.session.query(User).filter_by(isActive='1').first()
+
+    @staticmethod
+    def set_active_user(self, user_active):
+        Database.get_active_user(None).isActive = 0
+        Database.session.query(User).filter_by(username=user_active).first().isActive = 1
+        Database.session.commit()
 
 
 class User(Database.Model):
@@ -51,8 +58,8 @@ def encode_pictures():
 
     for pic in pictures:
         name = pic.picturePath.split('/')[-1].split('.')[0].translate(str.maketrans('', '', digits))
-        image = cv2.imread(pic.picturePath)
-        rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = imread(pic.picturePath)
+        rgb = cvtColor(image, COLOR_BGR2RGB)
         boxes = face_recognition.face_locations(rgb, model='hog')
         encodings = face_recognition.face_encodings(rgb, boxes)
 
@@ -65,44 +72,61 @@ def encode_pictures():
         Database.session.commit()
 
     if len(pictures) != 0:
-        data = {"encodings": knownEncodings, "names": knownNames}
+        data_all = {"encodings": knownEncodings, "names": knownNames}
+        dump_file = open(get_project_path() + '/config/encodings.pickle', mode="rb")
+        dump_file_size = os.path.getsize(dump_file.name)
+
+        if dump_file_size != 0:
+            data_old = pickle.load(dump_file)
+            data_all.update(data_old)
+
         dump_file = open(get_project_path() + '/config/encodings.pickle', mode="wb")
 
-        pickle.dump(obj=data, file=dump_file)
+        pickle.dump(obj=data_all, file=dump_file)
         dump_file.close()
 
 
 def recognize_face():
     dump_file = open(get_project_path() + '/config/encodings.pickle', "rb")
-    data = pickle.load(file=dump_file)
+
+    if os.path.getsize(dump_file.name) != 0:
+        data = pickle.load(file=dump_file)
+    else:
+        data = None
+
     dump_file.close()
 
-    detector = cv2.CascadeClassifier(get_project_path() + '/config/haarcascade_frontalface_default.xml')
-    camera = cv2.VideoCapture(0)
-    time.sleep(0.1)
-    if camera.isOpened():
-        ret_val, frame = camera.read()
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        rects = detector.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30), flags=cv2.CASCADE_SCALE_IMAGE)
-        boxes = [(y, x + w, y + h, x) for (x, y, w, h) in rects]
-        encodings = face_recognition.face_encodings(rgb, boxes)
-        names = []
+    if data is not None:
+        detector = CascadeClassifier(get_project_path() + '/config/haarcascade_frontalface_default.xml')
+        camera = VideoCapture(index=0)
+        time.sleep(0.1)
+        if camera.isOpened():
+            ret_val, frame = camera.read()
+            gray = cvtColor(frame, COLOR_BGR2GRAY)
+            camera.release()
+            rgb = cvtColor(frame, COLOR_BGR2RGB)
+            rects = detector.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30), flags=CASCADE_SCALE_IMAGE)
+            boxes = [(y, x + w, y + h, x) for (x, y, w, h) in rects]
+            encodings = face_recognition.face_encodings(rgb, boxes)
+            names = []
 
-        for encoding in encodings:
-            matches = face_recognition.compare_faces(data["encodings"], encoding)
-            name = "Unknown"
+            for encoding in encodings:
+                matches = face_recognition.compare_faces(data["encodings"], encoding)
+                name = "Default"
 
-            if True in matches:
-                matchedIdxs = [i for (i, b) in enumerate(matches) if b]
-                counts = {}
+                if True in matches:
+                    matchedIdxs = [i for (i, b) in enumerate(matches) if b]
+                    counts = {}
 
-                for i in matchedIdxs:
-                    name = data["names"][i]
-                    counts[name] = counts.get(name, 0) + 1
+                    for i in matchedIdxs:
+                        name = data["names"][i]
+                        counts[name] = counts.get(name, 0) + 1
 
-                name = max(counts, key=counts.get)
-            names.append(name)
-            print(names)
+                    name = max(counts, key=counts.get)
+                names.append(name)
 
-        camera.release()
+            if len(encodings) == 0:
+                names.append("Default")
+
+            print(names[0])
+            Database.set_active_user(None, user_active=names[0])

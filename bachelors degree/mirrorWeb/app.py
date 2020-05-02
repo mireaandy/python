@@ -133,19 +133,19 @@ def unauthorized_callback():
 @login_required
 def google():
     if 'code' not in request.args:
-        auth_uri, _ = flow.authorization_url(access_type='offline')
-
+        auth_uri, _ = flow.authorization_url()
         return redirect(auth_uri)
+
     else:
         user = models.User.query.filter_by(username=current_user.username).first()
 
-        if len(user.googleToken) == 0:
+        if not user.googleToken:
             flow.fetch_token(code=request.values['code'])
 
-            user.googleToken = 'userCredentials/' + current_user.username
+            user.googleToken = app.config['PROJECT_PATH'] + '/config/userCredentials/' + current_user.username
 
             database.session.commit()
-            pickle.dump(flow.credentials, open('../userCredentials/' + current_user.username, mode='wb'))
+            pickle.dump(flow.credentials, open(user.googleToken, mode='wb'))
 
         return redirect(url_for('main'))
 
