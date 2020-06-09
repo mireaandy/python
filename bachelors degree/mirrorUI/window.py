@@ -14,20 +14,20 @@ time_format = 12
 date_format = "%b %d, %Y"
 
 WEATHER_ICONS = {
-        'clear-day': f"{get_project_path()}/config/weatherIcons/Sun.png",
-        'wind': f"{get_project_path()}/config/weatherIcons/Wind.png",
-        'cloudy': f"{get_project_path()}/config/weatherIcons/Cloud.png",
-        'partly-cloudy-day': f"{get_project_path()}/config/weatherIcons/PartlySunny.png",
-        'rain': f"{get_project_path()}/config/weatherIcons/Rain.png",
-        'snow': f"{get_project_path()}/config/weatherIcons/Snow.png",
-        'snow-thin': f"{get_project_path()}/config/weatherIcons/Snow.png",
-        'fog': f"{get_project_path()}/config/weatherIcons/Haze.png",
-        'clear-night': f"{get_project_path()}/config/weatherIcons/Moon.png",
-        'partly-cloudy-night': f"{get_project_path()}/config/weatherIcons/PartlyMoon.png",
-        'thunderstorm': f"{get_project_path()}/config/weatherIcons/Storm.png",
-        'tornado': f"{get_project_path()}/config/weatherIcons/Tornado.png",
-        'hail': f"{get_project_path()}/config/weatherIcons/Hail.png"
-    }
+    'clear-day': f"{get_project_path()}/config/weatherIcons/Sun.png",
+    'wind': f"{get_project_path()}/config/weatherIcons/Wind.png",
+    'cloudy': f"{get_project_path()}/config/weatherIcons/Cloud.png",
+    'partly-cloudy-day': f"{get_project_path()}/config/weatherIcons/PartlySunny.png",
+    'rain': f"{get_project_path()}/config/weatherIcons/Rain.png",
+    'snow': f"{get_project_path()}/config/weatherIcons/Snow.png",
+    'snow-thin': f"{get_project_path()}/config/weatherIcons/Snow.png",
+    'fog': f"{get_project_path()}/config/weatherIcons/Haze.png",
+    'clear-night': f"{get_project_path()}/config/weatherIcons/Moon.png",
+    'partly-cloudy-night': f"{get_project_path()}/config/weatherIcons/PartlyMoon.png",
+    'thunderstorm': f"{get_project_path()}/config/weatherIcons/Storm.png",
+    'tornado': f"{get_project_path()}/config/weatherIcons/Tornado.png",
+    'hail': f"{get_project_path()}/config/weatherIcons/Hail.png"
+}
 
 
 class Clock(Frame):
@@ -47,21 +47,72 @@ class Clock(Frame):
         self.timeObject = datetime.now()
 
         if time_format == 12:
-            timeTick = self.timeObject.strftime('%I:%M %p')  # hour in 12h format
+            time_tick = self.timeObject.strftime('%I:%M %p')  # hour in 12h format
         else:
-            timeTick = self.timeObject.strftime('%H:%M')  # hour in 24h format
+            time_tick = self.timeObject.strftime('%H:%M')  # hour in 24h format
 
-        dayOfWeekTick = self.timeObject.strftime('%A')
-        dateTick = self.timeObject.strftime(date_format)
+        day_of_week_tick = self.timeObject.strftime('%A')
+        date_tick = self.timeObject.strftime(date_format)
 
-        if timeTick != self.timeLabel.cget("text"):
-            self.timeLabel.config(text=timeTick)
+        if time_tick != self.timeLabel.cget("text"):
+            self.timeLabel.config(text=time_tick)
 
-        if dayOfWeekTick != self.dayOfWeekLabel.cget("text"):
-            self.dayOfWeekLabel.config(text=dayOfWeekTick)
+        if day_of_week_tick != self.dayOfWeekLabel.cget("text"):
+            self.dayOfWeekLabel.config(text=day_of_week_tick)
 
-        if dateTick != self.dateLabel.cget("text"):
-            self.dateLabel.config(text=dateTick)
+        if date_tick != self.dateLabel.cget("text"):
+            self.dateLabel.config(text=date_tick)
+
+
+class Email(Frame):
+    def __init__(self, parent, *args, **kwargs):
+        Frame.__init__(self, parent, bg='black')
+        self.title = 'Emails'
+        self.emailLabel = Label(self, text=self.title, font=('Helvetica', 28), fg="white", bg="black")
+        self.emailSubjectContainer = Frame(self, bg='black')
+        self.parent = parent
+
+        self.emailLabel.pack(side=TOP, anchor=W)
+        self.emailSubjectContainer.pack(side=TOP, anchor=E)
+
+    def get_emails(self):
+        for widget in self.emailSubjectContainer.winfo_children():
+            widget.destroy()
+
+        if self.parent.currentActiveUser.username != 'Default':
+            with open(self.parent.currentActiveUser.googleToken, 'rb') as token:
+                credentials = pickle.load(token)
+
+            if credentials and credentials.expired and credentials.refresh_token:
+                credentials.refresh(Request())
+
+            service = build('gmail', 'v1', credentials=credentials)
+            response = service.users().messages().list(userId='me', labelIds=['UNREAD']).execute()
+            old_parent_property_value = self.parent.noEmailsDisplayed
+
+            for message in response['messages']:
+                self.parent.noEmailsDisplayed -= 1
+
+                if self.parent.noEmailsDisplayed == -1:
+                    self.parent.noEmailsDisplayed = old_parent_property_value
+                    break
+
+                display_response = service.users().messages().get(userId='me', id=message['id'], format='full').execute()
+                email_headers = display_response['payload'].get('headers')
+                label_body = next( item['value'].split('<')[0].split('>')[0] for item in email_headers if item["name"] == "From" ) + ':' + next( item['value'] for item in email_headers if item["name"] == "Subject" )
+                email_element = EmailElement(self.emailSubjectContainer, email_subject=label_body)
+
+                email_element.pack(side=TOP, anchor=W)
+
+
+class EmailElement(Frame):
+    def __init__(self, parent, email_subject='Email subject 1'):
+        Frame.__init__(self, parent, bg='black')
+
+        self.emailSubject = email_subject
+        self.emailSubjectLabel = Label(self, text=self.emailSubject, font=('Helvetica', 14), fg="white", bg="black", wraplength=500)
+
+        self.emailSubjectLabel.pack(side=TOP, anchor=W)
 
 
 class Calendar(Frame):
@@ -87,10 +138,8 @@ class Calendar(Frame):
                 credentials.refresh(Request())
 
             service = build('calendar', 'v3', credentials=credentials)
-
             events_result = service.events().list(calendarId='primary', timeMin=datetime.utcnow().isoformat() + 'Z',
-                                                  timeMax=(datetime.utcnow() + timedelta(hours=24)).isoformat() + 'Z',
-                                                  maxResults=5, singleEvents=True, orderBy='startTime').execute()
+                                                  maxResults=5, singleEvents=True).execute()
             events = events_result.get('items', [])
 
             for widget in self.calendarEventContainer.winfo_children():
@@ -109,38 +158,40 @@ class Calendar(Frame):
 class CalendarEvent(Frame):
     def __init__(self, parent, event_name="Event 1"):
         Frame.__init__(self, parent, bg='black')
+
         self.eventName = event_name
         self.eventNameLabel = Label(self, text=self.eventName, font=('Helvetica', 18), fg="white", bg="black")
+
         self.eventNameLabel.pack(side=TOP, anchor=E)
 
 
 class Newsletter(Frame):
     def __init__(self, parent, *args, **kwargs):
-        Frame.__init__(self, parent, *args, **kwargs)
-        self.configure(bg="black")
+        Frame.__init__(self, parent, bg='black')
+        self.title = 'News'
         self.newsHandler = News(parent.currentActiveUser.newsTopic)
-        self.labelContainer = Frame(self, bg="black")
-        self.label = Label(self.labelContainer, text="News", font=("Helvetica", 28), fg="white", bg="black",
-                           justify="left")
-        self.newsContainer = Frame(self, bg="black")
-        self.newsContentLabel = Label(self.newsContainer, font=("Helvetica", 15), fg="white", bg="black",
-                                      justify="left")
+        self.newsLabel = Label(self, text=self.title, font=("Helvetica", 28), fg="white", bg="black", justify="left")
+        self.newsElementContainer = Frame(self, bg="black")
+        self.parent = parent
 
-        self.label.pack(side="bottom", anchor=W)
-        self.newsContentLabel.pack()
-        self.labelContainer.grid(row=0, column=0)
-        self.newsContainer.grid(row=1, column=0)
+        self.newsLabel.pack(side=TOP, anchor=W)
+        self.newsElementContainer.pack(side=TOP, anchor=E)
 
     def refresh_news(self):
-        newsString = StringIO()
-
-        self.newsContentLabel.config(text=newsString.getvalue())
+        for widget in self.newsElementContainer.winfo_children():
+            widget.destroy()
 
         for newsTitle in self.newsHandler.get_news():
-            newsString.write(('\n' + newsTitle))
+            news_element = NewsElement(self.newsElementContainer, news_title=newsTitle)
+            news_element.pack(side=TOP, anchor=W)
 
-        self.newsContentLabel.config(text=newsString.getvalue())
-        newsString.close()
+
+class NewsElement(Frame):
+    def __init__(self, parent, news_title="News 1"):
+        Frame.__init__(self, parent, bg='black')
+        self.newsTitle = news_title
+        self.newsTitleLabel = Label(self, text=self.newsTitle, font=('Helvetica', 14), fg="white", bg="black")
+        self.newsTitleLabel.pack(side=TOP, anchor=E)
 
 
 class Weather(Frame):
@@ -163,7 +214,6 @@ class Weather(Frame):
         self.forecastLabel.pack(side=TOP, anchor=W)
         self.locationLabel = Label(self, font=('Helvetica', 15), fg="white", bg="black")
         self.locationLabel.pack(side=TOP, anchor=W)
-
 
     @staticmethod
     def get_ip():
@@ -245,11 +295,14 @@ class Window(Tk):
         self.clockFrame = Clock(self)
         self.calendarFrame = Calendar(self)
         self.weatherFrame = Weather(self)
+        self.emailFrame = Email(self)
+        self.noEmailsDisplayed = 5
 
         self.clockFrame.place(x=self.winfo_screenwidth() * 0.85, y=self.winfo_screenheight() * 0.01)
         self.newsFrame.place(x=self.winfo_screenwidth() * 0.01, y=self.winfo_screenheight() * 0.02)
         self.calendarFrame.place(x=self.winfo_screenwidth() * 0.01, y=self.winfo_screenheight() * 0.75)
         self.weatherFrame.place(x=self.winfo_screenwidth() * 0.77, y=self.winfo_screenheight() * 0.75)
+        self.emailFrame.place(x=self.winfo_screenwidth()*0.40, y=self.winfo_screenheight()*0.75)
         self.update_tk()
 
     def update_tk(self):
@@ -264,6 +317,7 @@ class Window(Tk):
             recognize_face()
             self.calendarFrame.get_events()
             self.newsFrame.refresh_news()
+            self.emailFrame.get_emails()
             self.three_min_refresh_rate = 0
 
         self.three_min_refresh_rate += 1
