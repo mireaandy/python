@@ -6,4 +6,8 @@
 .idea/
 __pycache__/
 .DS_Store
-
+bachelors degree/config/userCredentials/rqb3rt_95
+bachelors degree/config/userCredentials/mami
+bachelors degree/config/userCredentials/andrei
+bachelors degree/config/mirrorDatabase.db
+bachelors degree/config/encodings.pickle
