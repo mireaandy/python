@@ -27,20 +27,22 @@ class RegistrationForm(FlaskForm):
     password2 = PasswordField('Repeat Password', validators=[DataRequired(), EqualTo('password')])
     submit = SubmitField('Register')
 
-    def validate_username(self, username):
-        user = User.query.filter_by(username=username.data).first()
-        if user is not None:
-            raise ValidationError('Please use a different username.')
-
 
 class EditForm(FlaskForm):
     changePassword = BooleanField('Check this if you want to change your password')
     newsTopic = SelectField('News Topic', choices=get_choices())
     submitChanges = SubmitField("Submit changes")
 
+class ForgottenPassword(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    newPassword = PasswordField('New Password', validators=[DataRequired()])
+    submitPassword = SubmitField('Submit password')
+
 
 class ConfirmPassForm(FlaskForm):
     currentPassword = PasswordField("Current password", validators=[DataRequired()])
     newPassword = PasswordField("New password", validators=[DataRequired()])
-    newPassword2 = PasswordField("Repeat password", validators=[DataRequired(), EqualTo('newPassword', message='Must be equal to your new password.')])
+    newPassword2 = PasswordField("Repeat new password",
+                                 validators=[DataRequired(), EqualTo('newPassword',
+                                                                     message='Must be equal to your new password.')])
     submitPassword = SubmitField("Submit password")

@@ -3,7 +3,8 @@
 {% block app_content %}
     <div class="container center-block mx-auto">
         {% if not current_user.newsTopic %}
-            <div style="text-align: center;">This is your first registration, please select a news topic, upload 10 pictures of yourself and integrate the mirror's calendar with Google</div>
+            <div style="text-align: center;">This is your first registration, please select a news topic,
+                upload 10 pictures of yourself and integrate the mirror's calendar and email with Google!</div>
             <br style="height: 225px">
         {% endif %}
 
@@ -63,7 +64,7 @@
                  <div class="row">
                      {% if not current_user.googleToken %}
                          <div class="col-sm">
-                             <a class="btn btn-primary" href="{{ url_for('google') }}" role="button">Click here to integrate with Google Calendar</a>
+                             <a class="btn btn-primary" href="{{ url_for('google') }}" role="button">Click here to integrate with Google</a>
                          </div>
                      {% endif %}
 

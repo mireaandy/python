@@ -1,22 +1,24 @@
 {% extends "base.html" %}
 
 {% block app_content %}
-    <div class="container center-block mx-auto">
-        <h1> Change password</h1>
+    <div class="container center-block mx-auto" style="width: auto; max-width: 380px">
+        <h1 > Forgotten Password </h1>
+
+        <br>
 
         <form action="" method="post" novalidate>
             {{ form.hidden_tag() }}
 
             <div class="form-group">
-                {{ form.currentPassword.label(class_="form-control-label") }}
+                {{ form.username.label(class_="form-control-label") }}
 
                 <div class="input-group mb-3">
-                    {{ form.currentPassword(size=32, class_="form-control") }}
+                    {{ form.username(size=32, class_="form-control") }}
 
-                    {% if form.currentPassword.errors %}
+                    {% if form.username.errors %}
                         <div class="input-group-append">
 
-                            {% for error in form.currentPassword.errors %}
+                            {% for error in form.username.errors %}
                                 <span class="input-group-text" style="color: red"> {{error}} </span>
                             {% endfor %}
 
@@ -36,25 +38,6 @@
                         <div class="input-group-append">
 
                             {% for error in form.newPassword.errors %}
-                                <span class="input-group-text" style="color: red"> {{error}} </span>
-                            {% endfor %}
-
-                        </div>
-                    {% endif %}
-
-                </div>
-            </div>
-
-            <div class="form-group">
-                {{ form.newPassword2.label(class_="form-control-label") }}
-
-                <div class="input-group mb-3">
-                    {{ form.newPassword2(size=32, class_="form-control") }}
-
-                    {% if form.newPassword2.errors %}
-                        <div class="input-group-append">
-
-                            {% for error in form.newPassword2.errors %}
                                 <span class="input-group-text" style="color: red"> {{error}} </span>
                             {% endfor %}
 

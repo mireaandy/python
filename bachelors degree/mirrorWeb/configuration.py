@@ -19,10 +19,10 @@ class Config(object):
     SECRET_KEY = '0123456789'
     PROJECT_PATH = get_project_path()
     SQLALCHEMY_DATABASE_URI = 'sqlite:///' + PROJECT_PATH + '/config/mirrorDatabase.db'
-    # os.environ.get('DATABASE_URL') or \
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     REDIRECT_URI = 'http://raspberry.tplinkdns.com:276/google'
-    GOOGLE_SCOPES = ['https://www.googleapis.com/auth/calendar.readonly', 'https://www.googleapis.com/auth/gmail.readonly']
+    GOOGLE_SCOPES = ['https://www.googleapis.com/auth/calendar.readonly',
+                     'https://www.googleapis.com/auth/gmail.readonly']
     PICTURE_FOLDER = PROJECT_PATH + '/config/userPictures'
     ALLOWED_EXTENSIONS = ['png', 'jpg', 'jpeg']
     PICTURE_ID_FILENAME = get_number_of_pics() - 1  # .DS_Store reasons !!!!

@@ -1,6 +1,5 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import json
-from io import StringIO
 from tkinter import *
 import pickle
 import requests
@@ -68,6 +67,7 @@ class Email(Frame):
     def __init__(self, parent, *args, **kwargs):
         Frame.__init__(self, parent, bg='black')
         self.title = 'Emails'
+        self.noTitle = ''
         self.emailLabel = Label(self, text=self.title, font=('Helvetica', 28), fg="white", bg="black")
         self.emailSubjectContainer = Frame(self, bg='black')
         self.parent = parent
@@ -80,6 +80,8 @@ class Email(Frame):
             widget.destroy()
 
         if self.parent.currentActiveUser.username != 'Default':
+            self.emailLabel['text'] = self.title
+
             with open(self.parent.currentActiveUser.googleToken, 'rb') as token:
                 credentials = pickle.load(token)
 
@@ -99,10 +101,14 @@ class Email(Frame):
 
                 display_response = service.users().messages().get(userId='me', id=message['id'], format='full').execute()
                 email_headers = display_response['payload'].get('headers')
-                label_body = next( item['value'].split('<')[0].split('>')[0] for item in email_headers if item["name"] == "From" ) + ':' + next( item['value'] for item in email_headers if item["name"] == "Subject" )
+                label_body = next( item['value'].split('<')[0].split('>')[0] for item in email_headers
+                                   if item["name"] == "From" ) + ' : ' + next( item['value'] for item in email_headers
+                                                                             if item["name"] == "Subject" )
                 email_element = EmailElement(self.emailSubjectContainer, email_subject=label_body)
 
                 email_element.pack(side=TOP, anchor=W)
+        else:
+            self.emailLabel['text'] = self.noTitle
 
 
 class EmailElement(Frame):
@@ -119,6 +125,7 @@ class Calendar(Frame):
     def __init__(self, parent, *args, **kwargs):
         Frame.__init__(self, parent, bg='black')
         self.title = 'Calendar Events'
+        self.noTitle = ''
         self.calendarLabel = Label(self, text=self.title, font=('Helvetica', 28), fg="white", bg="black")
         self.calendarEventContainer = Frame(self, bg='black')
         self.parent = parent
@@ -131,6 +138,8 @@ class Calendar(Frame):
             widget.destroy()
 
         if self.parent.currentActiveUser.username != 'Default':
+            self.calendarLabel['text'] = self.title
+
             with open(self.parent.currentActiveUser.googleToken, 'rb') as token:
                 credentials = pickle.load(token)
 
@@ -151,8 +160,7 @@ class Calendar(Frame):
                 calendar_event = CalendarEvent(self.calendarEventContainer, event_name=event_text)
                 calendar_event.pack(side=TOP, anchor=E)
         else:
-            for widget in self.calendarEventContainer.winfo_children():
-                widget.destroy()
+            self.calendarLabel['text'] = self.noTitle
 
 
 class CalendarEvent(Frame):
@@ -177,7 +185,7 @@ class Newsletter(Frame):
         self.newsLabel.pack(side=TOP, anchor=W)
         self.newsElementContainer.pack(side=TOP, anchor=E)
 
-    def refresh_news(self):
+    def get_news(self):
         for widget in self.newsElementContainer.winfo_children():
             widget.destroy()
 
@@ -260,7 +268,7 @@ class Weather(Frame):
                 self.iconLabel.config(image=photo)
                 self.iconLabel.image = photo
         else:
-            self.iconLabell.config(image='')
+            self.iconLabel.config(image='')
 
         if self.currently != currently2:
             self.currently = currently2
@@ -288,7 +296,7 @@ class Window(Tk):
         self.attributes("-fullscreen", True)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
-        self.three_min_refresh_rate = 0
+        self.threeMinRefreshRate = 0
         self.database = Database()
         self.currentActiveUser = Database.get_active_user(None)
         self.newsFrame = Newsletter(self)
@@ -301,7 +309,7 @@ class Window(Tk):
         self.clockFrame.place(x=self.winfo_screenwidth() * 0.85, y=self.winfo_screenheight() * 0.01)
         self.newsFrame.place(x=self.winfo_screenwidth() * 0.01, y=self.winfo_screenheight() * 0.02)
         self.calendarFrame.place(x=self.winfo_screenwidth() * 0.01, y=self.winfo_screenheight() * 0.75)
-        self.weatherFrame.place(x=self.winfo_screenwidth() * 0.77, y=self.winfo_screenheight() * 0.75)
+        self.weatherFrame.place(x=self.winfo_screenwidth() * 0.85, y=self.winfo_screenheight() * 0.75)
         self.emailFrame.place(x=self.winfo_screenwidth()*0.40, y=self.winfo_screenheight()*0.75)
         self.update_tk()
 
@@ -311,16 +319,16 @@ class Window(Tk):
         self.currentActiveUser = Database.get_active_user(None)
         self.newsFrame.newsHandler.replace_keyword(self.currentActiveUser.newsTopic)
 
-        if self.three_min_refresh_rate == 5:
+        if self.threeMinRefreshRate == 5:
             self.weatherFrame.get_weather()
             encode_pictures()
             recognize_face()
             self.calendarFrame.get_events()
-            self.newsFrame.refresh_news()
+            self.newsFrame.get_news()
             self.emailFrame.get_emails()
-            self.three_min_refresh_rate = 0
+            self.threeMinRefreshRate = 0
 
-        self.three_min_refresh_rate += 1
+        self.threeMinRefreshRate += 1
 
         self.after(1000, self.update_tk)
 

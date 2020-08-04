@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from string import digits
 import os
-from cv2 import imread, cvtColor, COLOR_BGR2RGB, CascadeClassifier, VideoCapture, COLOR_BGR2GRAY, CASCADE_SCALE_IMAGE
+from cv2 import imread, cvtColor, COLOR_BGR2RGB, VideoCapture
 import face_recognition
 import pickle
 import time
@@ -16,7 +16,9 @@ def get_project_path():
 class Database:
     databaseEngine = create_engine('sqlite:///' + get_project_path() + '/config/mirrorDatabase.db')
     Model = declarative_base()
+
     Model.metadata.create_all(databaseEngine)
+
     session = sessionmaker(bind=databaseEngine)()
 
     @staticmethod
@@ -59,6 +61,7 @@ def encode_pictures():
     for pic in pictures:
         name = pic.picturePath.split('/')[-1].split('.')[0].translate(str.maketrans('', '', digits))
         image = imread(pic.picturePath)
+
         rgb = cvtColor(image, COLOR_BGR2RGB)
         boxes = face_recognition.face_locations(rgb, model='hog')
         encodings = face_recognition.face_encodings(rgb, boxes)
@@ -97,16 +100,13 @@ def recognize_face():
     dump_file.close()
 
     if data is not None:
-        detector = CascadeClassifier(get_project_path() + '/config/haarcascade_frontalface_default.xml')
         camera = VideoCapture(index=0)
         time.sleep(0.1)
         if camera.isOpened():
             ret_val, frame = camera.read()
-            gray = cvtColor(frame, COLOR_BGR2GRAY)
             camera.release()
             rgb = cvtColor(frame, COLOR_BGR2RGB)
-            rects = detector.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30), flags=CASCADE_SCALE_IMAGE)
-            boxes = [(y, x + w, y + h, x) for (x, y, w, h) in rects]
+            boxes = face_recognition.face_locations(rgb, model='hog')
             encodings = face_recognition.face_encodings(rgb, boxes)
             names = []
 

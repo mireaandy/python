@@ -52,6 +52,25 @@ def index():
     return render_template('index.html', form=form, index=True)
 
 
+@app.route('/forgotpass', methods=['GET', 'POST'])
+def forgotpass():
+    form = forms.ForgottenPassword()
+
+    if form.validate_on_submit():
+        user = models.User.query.filter_by(username=form.username.data).first()
+
+        if user is None:
+            return redirect(url_for('index'))
+
+        user.set_password(form.newPassword.data)
+
+        database.session.commit()
+
+        return redirect(url_for('index'))
+
+    return render_template('forgotpass.html', form=form)
+
+
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     form = forms.RegistrationForm()
@@ -124,11 +143,6 @@ def confirmpass():
     return render_template('confirmpass.html', form=form, chnpass=True)
 
 
-@login.unauthorized_handler
-def unauthorized_callback():
-    return redirect(url_for('index'))
-
-
 @app.route('/google', methods=['GET', 'POST'])
 @login_required
 def google():
@@ -154,6 +168,11 @@ def google():
 def logout():
     logout_user()
     return redirect(url_for('index', index=True))
+
+
+@login.unauthorized_handler
+def unauthorized_callback():
+    return redirect(url_for('index'))
 
 
 if __name__ == '__main__':
